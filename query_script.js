@@ -1,10 +1,13 @@
 const pg = require("pg");
 const settings = require("./settings"); // settings.json
 
-const args = process.argv.slice(2,)
+var args2 = process.argv.slice(2,)
 
 const text  = `SELECT id, first_name, last_name, birthdate FROM famous_people WHERE first_name LIKE $1::text OR last_name LIKE $1::text`
-const values = args[0]
+const values = args2[0]
+
+
+module.exports = (function() {
 
 const client = new pg.Client({
   user     : settings.user,
@@ -16,23 +19,22 @@ const client = new pg.Client({
 });
 
 client.connect((err) => {
-  if (err) {
-    return console.error("Connection Error", err);
+})
+  function famousPeople (textArray, callback) {
+    const text  = `SELECT id, first_name, last_name, birthdate FROM famous_people WHERE first_name LIKE $1::text OR last_name LIKE $1::text`
+    //const values = args[0]
+    client.query(text, textArray, (err, result) => {
+      if (err) {
+        return console.log("error running query", err);
+      }
+      callback(err, result)
+    })
   }
-  client.query(text, args,  (err, result) => {
-    if (err) {
-      return console.error("error running query", err);
-    }
-    var num = 0
-    console.log(`Found ${result.rows.length} persons by the name of ${values}:`)
-    for (row of result.rows) {
-      num += 1
-      var output = `- ${num} ${row.first_name} ${row.last_name} born ${JSON.stringify(row.birthdate).slice(1,11)}`
-      console.log(output)
-    }
+  return {
+    famousPeople: famousPeople
+  }
+})()
 
-    client.end();
-  });
-});
+
 
 
